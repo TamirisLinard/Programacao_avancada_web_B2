@@ -1,51 +1,64 @@
 import React, { useState } from 'react';
 import { useRouter } from 'expo-router';
-import './App.css'; 
+import './App.css';
 import { getData, storeData } from '../storage';
 
 interface FormData {
   name: string;
   email: string;
-  passworld: string;
+  password: string;
 }
 
 export default function SignUp() {
-
   const router = useRouter();
-  
+
   const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
-    passworld: ''
+    password: '',
   });
+
+  const [error, setError] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({
       ...prevData,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    try{
-        const response = await fetch("http://localhost:3000/user/create", {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(formData)
-        }) 
-        console.log(response)
 
-        const responseData = await response.json();
-        if (response.ok) {
-          router.replace('/login');
-        }
+    // Validação básica
+    if (!formData.name || !formData.email || !formData.password) {
+      setError('Todos os campos são obrigatórios.');
+      return;
     }
-    catch(error){
-        console.log(error)
+
+    setError(null);
+
+    try {
+      const response = await fetch('http://localhost:3000/user/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      const responseData = await response.json();
+
+      if (response.ok) {
+        console.log('Usuário criado com sucesso:', responseData);
+        router.replace('/login');
+      } else {
+        setError(responseData.message || 'Erro ao criar conta. Tente novamente.');
+      }
+    } catch (error) {
+      console.error('Erro na requisição:', error);
+      setError('Erro ao conectar-se ao servidor. Tente novamente mais tarde.');
     }
-};
+  };
 
   return (
     <div className="container">
@@ -55,33 +68,34 @@ export default function SignUp() {
       </header>
 
       <form className="form" onSubmit={handleSubmit}>
-        <input 
-          type="text" 
-          name="name" 
-          value={formData.name} 
-          onChange={handleChange} 
-          placeholder="Nome de usuário" 
+        <input
+          type="text"
+          name="name"
+          value={formData.name}
+          onChange={handleChange}
+          placeholder="Nome de usuário"
           className="input"
-          required 
+          required
         />
-        <input 
-          type="email" 
-          name="email" 
-          value={formData.email} 
-          onChange={handleChange} 
-          placeholder="E-mail" 
+        <input
+          type="email"
+          name="email"
+          value={formData.email}
+          onChange={handleChange}
+          placeholder="E-mail"
           className="input"
-          required 
+          required
         />
-        <input 
-          type="password" 
-          name="passworld" 
-          value={formData.passworld} 
-          onChange={handleChange} 
-          placeholder="Senha" 
+        <input
+          type="password"
+          name="password"
+          value={formData.password}
+          onChange={handleChange}
+          placeholder="Senha"
           className="input"
-          required 
+          required
         />
+        {error && <div className="error-message">{error}</div>}
         <button type="submit" className="submit-button">Cadastrar</button>
       </form>
 
